@@ -134,14 +134,22 @@ def extract_json(
     else:
         records = [{"value": json_data}]
         
-    # Format records if they are raw lists (e.g., CSV-like JSON [[0, 1], [2, 3]])
-    formatted_records = []
+    # Format records
+    # Handle nested batches: if a record is a list and contains dictionaries, 
+    # we expand it into separate records. This handles structures like [[{obj1}, {obj2}]] 
+    # which often appear in paginated or batched API responses.
+    final_records = []
     for r in records:
         if isinstance(r, list):
-            formatted_records.append({f"col{i+1}": val for i, val in enumerate(r)})
+            # If the list contains at least one dictionary, assume it's a batch of records
+            if any(isinstance(item, dict) for item in r):
+                final_records.extend(r)
+            else:
+                # Treat as a single row-record with col1, col2... (CSV-like JSON)
+                final_records.append({f"col{i+1}": val for i, val in enumerate(r)})
         else:
-            formatted_records.append(r)
-    records = formatted_records
+            final_records.append(r)
+    records = final_records
         
     # Flatten and explode each record
     flattened_records = []

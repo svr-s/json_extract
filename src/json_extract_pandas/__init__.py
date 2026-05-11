@@ -1,4 +1,4 @@
 from .json_extract import extract_json, _flatten_and_expand
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __all__ = ["extract_json", "_flatten_and_expand"]
