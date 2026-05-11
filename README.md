@@ -78,9 +78,39 @@ The primary extraction engine.
 
 Here is an example demonstrating all parameters functioning in tandem to slice a massive, nested payload down to an exact, clean specification:
 
+### 1. Sample Data (`users_export.json`)
+```json
+[
+  {
+    "accountId": "ACC-123",
+    "regionCode": "US-EAST",
+    "shippingAddress": {
+      "city": "New York",
+      "zipCode": "10001"
+    },
+    "history": [
+      {"orderId": "A1", "statusCode": "DELIVERED"},
+      {"orderId": "A2", "statusCode": "PENDING"}
+    ]
+  },
+  {
+    "accountId": "ACC-999",
+    "regionCode": "EU-WEST",
+    "shippingAddress": {
+      "city": "London",
+      "zipCode": "E1 6AN"
+    },
+    "history": [
+      {"orderId": "B1", "statusCode": "SHIPPED"}
+    ]
+  }
+]
+```
+
+### 2. Python Script
 ```python
 import json
-from json_extract import extract_json
+from json_extract_pandas import extract_json
 
 with open('users_export.json', 'r') as f:
     data = json.load(f)
