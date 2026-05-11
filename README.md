@@ -36,7 +36,7 @@ print(df.head())
 
 ---
 
-## Advanced API Reference
+## Function Reference
 
 ### `extract_json(json_data, **kwargs)`
 
