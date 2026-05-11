@@ -20,9 +20,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[tool.setuptools]
-# This tells setuptools to package your single json_extract.py file
-py-modules = ["json_extract"]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [project.urls]
 Homepage = "https://github.com/svr-s/json_extract"
