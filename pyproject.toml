@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "json_extract"
+name = "json-extract-pandas"
 version = "0.1.0"
 authors = [
   { name="Vatsa", email="228140210+svr-s@users.noreply.github.com" },
