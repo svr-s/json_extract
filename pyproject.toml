@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "json-extract-pandas"
+version = "0.1.0"
+authors = [
+  { name="Your Name", email="your.email@example.com" },
+]
+description = "A robust JSON-to-CSV extraction engine for deeply nested payloads."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=1.0.0"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+# This tells setuptools to package your single json_extract.py file
+py-modules = ["json_extract"]
