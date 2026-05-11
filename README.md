@@ -1,4 +1,4 @@
-# JSON Extract (`json_extract`)
+# JSON Extract (`json_extract_pandas`)
 
 A high-performance, reusable Python utility designed to natively flatten, parse, and filter deeply nested JSON data into clean, normalized Pandas DataFrames. It acts as a powerful JSON-to-CSV extraction engine for robust data pipelines.
 
@@ -23,7 +23,7 @@ Import `extract_json` directly into your data pipeline script:
 
 ```python
 import json
-from json_extract import extract_json
+from json_extract_pandas import extract_json
 
 # 1. Load your raw payload
 with open('data.json', 'r') as f:

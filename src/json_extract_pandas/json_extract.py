@@ -118,7 +118,7 @@ def extract_json(
     if not isinstance(json_data, (dict, list)):
         raise ValueError(f"Invalid input: json_data must be a dictionary or a list, got {type(json_data).__name__}.")
         
-    # 1. Determine the records to process
+    # Determine the records to process
     if isinstance(json_data, list):
         records = json_data
     elif isinstance(json_data, dict):
