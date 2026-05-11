@@ -47,7 +47,9 @@ def extract_json(
     row_filters: Optional[Dict[str, Any]] = None, 
     remove_duplicates: bool = False, 
     simplify_columns: bool = False, 
-    remove_empty: Union[bool, str] = False
+    remove_empty: Union[bool, str] = False,
+    sort_columns: bool = False,
+    keep_all_columns: bool = False
 ) -> Tuple[Dict[str, Any], pd.DataFrame]:
     """
     Takes parsed JSON data, extracts the primary records, flattens deeply nested 
@@ -57,7 +59,8 @@ def extract_json(
     This function acts as a robust JSON-to-CSV data extraction engine, specifically
     built to handle complex, heavily-nested JSON payloads. It automatically gracefully 
     handles raw primitive arrays, standardizes column names, and allows for powerful 
-    wildcard column extraction and list-based row filtering.
+    wildcard column extraction, list-based row filtering, and intelligent record unpacking 
+    for nested batches.
     
     Args:
         json_data (dict | list): 
@@ -100,6 +103,17 @@ def extract_json(
             - `'any'` (or True): Drops the row if *any* of its filtered columns are missing.
             - `'all'`: Drops the row only if *all* of its filtered columns are missing.
             - False: Disables empty row removal. Defaults to False.
+            
+        sort_columns (bool, optional):
+            If True, sorts the columns alphabetically. If used with `desired_columns` 
+            and `keep_all_columns=True`, it sorts the "remaining" columns that were 
+            not explicitly pinned to the front. Defaults to False.
+            
+        keep_all_columns (bool, optional):
+            Controls the behavior of `desired_columns`.
+            - False (default): `desired_columns` acts as a filter. Only requested columns are kept.
+            - True: `desired_columns` acts as a priority list. Requested columns appear first 
+              in order, followed by all other columns found in the dataset.
     
     Returns:
         tuple: A tuple containing:
@@ -159,12 +173,15 @@ def extract_json(
     # Create DataFrame
     df = pd.DataFrame(flattened_records)
     
-    # Apply Column Filters
+    # Apply Column Selection and Sorting
+    all_dataset_columns = list(df.columns)
+    final_columns = all_dataset_columns  # Default to all columns in original order
+    
     if desired_columns:
         if not isinstance(desired_columns, list):
             raise ValueError("Invalid input: desired_columns must be a list of strings.")
             
-        valid_columns = []
+        matched_priority_columns = []
         for req_col in desired_columns:
             req_str = str(req_col).strip()
             
@@ -172,39 +189,52 @@ def extract_json(
             if re.match(r'^\d+-\d+$', req_str):
                 start, end = map(int, req_str.split('-'))
                 start_idx = max(0, start - 1)
-                end_idx = min(len(df.columns), end)
-                matched_cols = list(df.columns[start_idx:end_idx])
+                end_idx = min(len(all_dataset_columns), end)
+                matched_cols = all_dataset_columns[start_idx:end_idx]
                 if not matched_cols:
-                    print(f"Warning: Index range '{req_str}' is entirely out of bounds for the dataset.")
-                valid_columns.extend(matched_cols)
+                    print(f"Warning: Index range '{req_str}' is entirely out of bounds.")
+                matched_priority_columns.extend(matched_cols)
                 
             # Check for single digit index (e.g., "5" or 5)
             elif req_str.isdigit():
                 idx = int(req_str) - 1
-                if 0 <= idx < len(df.columns):
-                    valid_columns.append(df.columns[idx])
+                if 0 <= idx < len(all_dataset_columns):
+                    matched_priority_columns.append(all_dataset_columns[idx])
                 else:
-                    print(f"Warning: Index '{req_str}' is out of bounds for the dataset.")
+                    print(f"Warning: Index '{req_str}' is out of bounds.")
                     
             # Check for wildcards
             elif '*' in req_str or '?' in req_str:
-                # Use fnmatch to support both prefix.* and *.suffix patterns
-                matched_cols = [c for c in df.columns if fnmatch.fnmatch(c, req_str)]
+                matched_cols = [c for c in all_dataset_columns if fnmatch.fnmatch(c, req_str)]
                 if not matched_cols:
-                    print(f"Warning: Wildcard filter '{req_str}' did not match any columns in the dataset.")
-                valid_columns.extend(matched_cols)
+                    print(f"Warning: Wildcard filter '{req_str}' did not match any columns.")
+                matched_priority_columns.extend(matched_cols)
                 
             # Exact match
             else:
-                if req_str in df.columns:
-                    valid_columns.append(req_str)
+                if req_str in all_dataset_columns:
+                    matched_priority_columns.append(req_str)
                 else:
-                    raise KeyError(f"Requested column '{req_str}' does not exist in the exploded dataset.")
+                    raise KeyError(f"Requested column '{req_str}' does not exist.")
                     
-        # Deduplicate the list while preserving order
+        # Deduplicate priority list while preserving order
         seen = set()
-        final_columns = [x for x in valid_columns if not (x in seen or seen.add(x))]
-        df = df[final_columns]
+        priority_ordered = [x for x in matched_priority_columns if not (x in seen or seen.add(x))]
+        
+        if keep_all_columns:
+            # Find the rest of the columns not in the priority list
+            remaining = [c for c in all_dataset_columns if c not in seen]
+            if sort_columns:
+                remaining.sort()
+            final_columns = priority_ordered + remaining
+        else:
+            final_columns = priority_ordered
+            
+    elif sort_columns:
+        # No desired_columns provided, just sort everything
+        final_columns = sorted(all_dataset_columns)
+        
+    df = df[final_columns]
         
     # Apply Row Filters
     if row_filters:

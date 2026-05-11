@@ -8,6 +8,8 @@ A high-performance, reusable Python utility designed to natively flatten, parse,
 - **Dynamic Filtering**: Robust API to slice your exact dataset out of massive payloads.
   - *Column Filtering*: Strict matching, 1-based numeric indexing (e.g., `["1-7", 10]`), Prefix wildcards (`parent.*`), and Suffix wildcards (`*.statusCode`).
   - *Row Filtering*: Filter rows by exact values or lists of acceptable values.
+- **Intelligent Record Unpacking**: Automatically detects and expands nested batches of objects (e.g., `[[{obj1}, {obj2}]]`) often found in paginated or sharded API responses.
+- **Column Sorting & Priority Ordering**: Specify "pinned" columns to appear first, and keep the rest of the dataset sorted alphabetically.
 - **Smart Data Cleaning**: Natively deduplicate rows, drop `NaN`/blanks, and cleanly simplify column headers without causing naming collisions.
 - **Self-Documenting Metadata**: Instantly returns schema and dimension metadata (`table_size`, `column_names` mapped by 1-based index) alongside the DataFrame.
 
@@ -71,6 +73,14 @@ The primary extraction engine.
   * `'any'` (or `True`): Strict. Drops the row if *any* of the filtered columns are missing.
   * `'all'`: Lenient. Drops the row only if *all* of the filtered columns are entirely missing.
   * `False`: Disabled. Retains everything.
+
+* **`sort_columns`** `(bool)`: *(Optional, Default: False)*
+  If `True`, sorts the columns alphabetically. If used with `keep_all_columns=True`, it sorts only the "remaining" columns that were not explicitly pinned via `desired_columns`.
+
+* **`keep_all_columns`** `(bool)`: *(Optional, Default: False)*
+  Controls the behavior of the `desired_columns` list.
+  - `False` (default): `desired_columns` acts as a strict filter. Only the matched columns are returned.
+  - `True`: `desired_columns` acts as a **Priority Order**. Matched columns appear first in your specified order, followed by all other columns found in the dataset.
 
 ---
 
@@ -140,3 +150,30 @@ meta, df = extract_json(
 
 print(df.to_csv(index=False))
 ```
+
+---
+
+## Advanced Feature Highlights
+
+### 1. Intelligent Record Unpacking
+Often, enterprise APIs (like ADP or Workday) return data in nested lists:
+```json
+[
+  [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}],
+  [{"id": 3, "name": "Charlie"}]
+]
+```
+`json_extract_pandas` detects this "Batch" structure automatically. Instead of creating a single row with `col1`, `col2` prefixes, it "unpacks" the inner lists into **3 separate rows** with standard `id` and `name` columns.
+
+### 2. Priority Column Sorting
+If you have a dataset with 200 columns but you always want the `EmployeeID` and `Email` at the very beginning (left-most side) and the rest of the columns sorted alphabetically:
+
+```python
+meta, df = extract_json(
+    data,
+    desired_columns=["EmployeeID", "Email"],
+    keep_all_columns=True, # Don't drop the other 198 columns
+    sort_columns=True      # Sort the remaining 198 columns alphabetically
+)
+```
+This ensures your resulting CSV or DataFrame is human-readable and consistently ordered.
