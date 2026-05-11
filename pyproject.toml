@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "json-extract-pandas"
 version = "0.1.0"
 authors = [
-  { name="Your Name", email="your.email@example.com" },
+  { name="Vatsa", email="228140210+svr-s@users.noreply.github.com" },
 ]
 description = "A robust JSON-to-CSV extraction engine for deeply nested payloads."
 readme = "README.md"
@@ -23,3 +23,7 @@ classifiers = [
 [tool.setuptools]
 # This tells setuptools to package your single json_extract.py file
 py-modules = ["json_extract"]
+
+[project.urls]
+Homepage = "https://github.com/svr-s/json_extract"
+Issues = "https://github.com/svr-s/json_extract/issues"
