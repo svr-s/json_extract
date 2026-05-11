@@ -156,7 +156,7 @@ print(df.to_csv(index=False))
 ## Advanced Feature Highlights
 
 ### 1. Intelligent Record Unpacking
-Often, enterprise APIs (like ADP or Workday) return data in nested lists:
+Often, enterprise APIs return data in nested lists:
 ```json
 [
   [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}],
