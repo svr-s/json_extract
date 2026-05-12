@@ -1,6 +1,6 @@
 # JSON Extract (`json_extract_pandas`)
 
-A high-performance, reusable Python utility designed to natively flatten, parse, and filter deeply nested JSON data into clean, normalized Pandas DataFrames. It acts as a powerful JSON-to-CSV extraction engine for robust data pipelines.
+A high-performance, reusable Python utility designed to natively flatten, parse, and filter deeply nested JSON data into clean, normalized Pandas DataFrames. It acts as a powerful JSON-to-Pandas extraction engine for robust data pipelines.
 
 ## Features
 - **Deep Hierarchical Flattening**: Uses recursive logic to safely flatten any nested JSON object, preserving exact path context via dot-notation (e.g. `parent.child.property`).

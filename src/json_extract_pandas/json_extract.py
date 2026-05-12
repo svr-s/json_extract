@@ -56,7 +56,7 @@ def extract_json(
     hierarchies into a pandas DataFrame using dot-notation, and explodes lists 
     via Cartesian product.
     
-    This function acts as a robust JSON-to-CSV data extraction engine, specifically
+    This function acts as a robust JSON-to-Pandas data extraction engine, specifically
     built to handle complex, heavily-nested JSON payloads. It automatically gracefully 
     handles raw primitive arrays, standardizes column names, and allows for powerful 
     wildcard column extraction, list-based row filtering, and intelligent record unpacking 

@@ -8,7 +8,7 @@ version = "0.1.7"
 authors = [
   { name="Vatsa", email="228140210+svr-s@users.noreply.github.com" },
 ]
-description = "A robust JSON-to-CSV extraction engine for deeply nested payloads."
+description = "A robust JSON-to-Pandas extraction engine for deeply nested payloads."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
