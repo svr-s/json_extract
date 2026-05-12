@@ -191,6 +191,8 @@ def extract_json(
                 start_idx = max(0, start - 1)
                 end_idx = min(len(all_dataset_columns), end)
                 matched_cols = all_dataset_columns[start_idx:end_idx]
+                if sort_columns:
+                    matched_cols.sort()
                 if not matched_cols:
                     print(f"Warning: Index range '{req_str}' is entirely out of bounds.")
                 matched_priority_columns.extend(matched_cols)
@@ -206,6 +208,8 @@ def extract_json(
             # Check for wildcards
             elif '*' in req_str or '?' in req_str:
                 matched_cols = [c for c in all_dataset_columns if fnmatch.fnmatch(c, req_str)]
+                if sort_columns:
+                    matched_cols.sort()
                 if not matched_cols:
                     print(f"Warning: Wildcard filter '{req_str}' did not match any columns.")
                 matched_priority_columns.extend(matched_cols)
