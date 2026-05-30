@@ -2,9 +2,10 @@ import pandas as pd
 import itertools
 import fnmatch
 import re
+import json
 from typing import Union, Optional, Tuple, Dict, Any
 
-def _flatten_and_expand(data, parent_key=''):
+def _flatten_and_expand(data, parent_key='', explode_paths=None):
     """
     Recursively flattens a nested dictionary or list and explodes lists 
     into multiple rows via Cartesian product.
@@ -12,38 +13,58 @@ def _flatten_and_expand(data, parent_key=''):
     For example: parentEntity.ChildEntity1.SubEntity2
     """
     if isinstance(data, dict):
+        if not data:
+            yield {parent_key: None} if parent_key else {}
+            return
+            
         key_results = []
         for k, v in data.items():
             new_key = f"{parent_key}.{k}" if parent_key else k
-            res = _flatten_and_expand(v, new_key)
-            key_results.append(res)
+            # Pass the generator itself to itertools.product
+            key_results.append(_flatten_and_expand(v, new_key, explode_paths))
             
-        combined_rows = []
         for combination in itertools.product(*key_results):
             merged = {}
             for d in combination:
                 merged.update(d)
-            combined_rows.append(merged)
+            yield merged
             
-        return combined_rows if combined_rows else [{}]
-        
     elif isinstance(data, list):
         if not data:
-            return [{parent_key: None}]
+            yield {parent_key: None}
+            return
             
-        all_rows = []
+        # Determine if we have permission to explode this list
+        should_explode = True
+        if explode_paths is not None:
+            should_explode = False
+            for path in explode_paths:
+                # 1. Exact match or wildcard match
+                if fnmatch.fnmatch(parent_key, path):
+                    should_explode = True
+                    break
+                # 2. Ancestor explosion: if the requested path is a child of this list
+                # e.g. parent_key="tags", path="tags.code.category" or "tags.*"
+                if path.startswith(parent_key + "."):
+                    should_explode = True
+                    break
+                    
+        if not should_explode:
+            # Safely stringify the entire list and prevent the combinatorial explosion
+            yield {parent_key: json.dumps(data)}
+            return
+            
         for item in data:
-            res = _flatten_and_expand(item, parent_key)
-            all_rows.extend(res)
-        return all_rows
+            yield from _flatten_and_expand(item, parent_key, explode_paths)
         
     else:
         # Base case: primitive value
-        return [{parent_key: data}]
+        yield {parent_key: data}
 
 def extract_json(
     json_data: Union[Dict, list], 
     desired_columns: Optional[list] = None, 
+    explode_paths: Optional[list] = None,
     row_filters: Optional[Dict[str, Any]] = None, 
     remove_duplicates: bool = False, 
     simplify_columns: bool = False, 
@@ -79,6 +100,15 @@ def extract_json(
             If indices are used alongside other matches that result in duplicates (e.g., `["5", "1-7"]`), 
             the final columns are safely deduplicated.
             If a requested column or wildcard matches no columns, a warning is printed.
+            
+        explode_paths (list, optional):
+            A list of specific array paths to explode. By default (None), all nested lists 
+            are exploded into multiple rows via Cartesian product. Passing an explicit list 
+            safely prevents Out-Of-Memory (OOM) combinatorial explosions on large payloads.
+            If a list path is NOT included in `explode_paths`, the flattener will halt and 
+            serialize the entire unexploded list into a string.
+            - Example (Exact): `["line_items", "tags"]`
+            - Example (Wildcard): `["*.line_items"]`
             
         row_filters (dict, optional): 
             A dictionary mapping column names to desired values to filter the dataset.
@@ -165,13 +195,13 @@ def extract_json(
             final_records.append(r)
     records = final_records
         
-    # Flatten and explode each record
-    flattened_records = []
-    for record in records:
-        flattened_records.extend(_flatten_and_expand(record))
+    # Flatten and explode each record using lazy evaluation (generator)
+    def generate_all_rows():
+        for record in records:
+            yield from _flatten_and_expand(record, explode_paths=explode_paths)
     
-    # Create DataFrame
-    df = pd.DataFrame(flattened_records)
+    # Create DataFrame directly from the generator
+    df = pd.DataFrame.from_records(generate_all_rows())
     
     # Apply Column Selection and Sorting
     all_dataset_columns = list(df.columns)
@@ -330,6 +360,7 @@ if __name__ == '__main__':
         meta, exploded_df = extract_json(
             json_data=data, 
             desired_columns=col_filters, 
+            explode_paths=["laborAllocationCodes"], # Only explode this array, stringify others like sample_test_4
             row_filters=r_filters,
             simplify_columns=False,
             remove_empty='all'
