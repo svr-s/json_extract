@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "json-extract-pandas"
-version = "0.1.9"
+version = "0.1.10"
 authors = [
   { name="Vatsa", email="228140210+svr-s@users.noreply.github.com" },
 ]
-description = "A robust JSON-to-Pandas extraction engine for deeply nested payloads."
+description = "A powerful Python utility designed to natively flatten, parse, and filter deeply nested JSON data into clean, normalized Pandas DataFrames. It acts as a powerful JSON-to-Pandas extraction engine for robust data pipelines."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
