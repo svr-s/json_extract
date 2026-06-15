@@ -1,29 +1,39 @@
 from json_extract_pandas import extract_json
-import json
 
-data = [{
-    "orderid": "ORD-123",
-    "line_items": [
-        {"sku": "L1"}, {"sku": "L2"}
-    ],
-    "tags": [
-        {
-            "code": {
-                "category": ["A", "B"]
+def test_ancestor_explosion():
+    data = [{
+        "orderid": "ORD-123",
+        "line_items": [
+            {"sku": "L1"}, {"sku": "L2"}
+        ],
+        "tags": [
+            {
+                "code": {
+                    "category": ["A", "B"]
+                },
+                "value": ["v1", "v2"]
             },
-            "value": ["v1", "v2"]
-        },
-        {
-            "code": {
-                "category": ["C", "D"]
-            },
-            "value": ["v3", "v4"]
-        }
-    ]
-}]
+            {
+                "code": {
+                    "category": ["C", "D"]
+                },
+                "value": ["v3", "v4"]
+            }
+        ]
+    }]
 
-# Scenario 3: Ancestor Explosion! We only ask for the deeply nested child.
-print("=== Scenario 3: Ancestor Explosion ('tags.code.category') ===")
-meta, df = extract_json(data, explode_paths=["tags.code.category"])
-print(df.to_string())
+    meta, df = extract_json(data, explode_paths=["tags.code.category"])
+    
+    assert len(df) == 4, f"Expected 4 rows, got {len(df)}"
+    assert df['orderid'].iloc[0] == "ORD-123"
 
+def test_no_explosion_default():
+    data = [{
+        "orderid": "ORD-123",
+        "line_items": [
+            {"sku": "L1"}, {"sku": "L2"}
+        ]
+    }]
+
+    meta, df = extract_json(data)
+    assert len(df) == 1, f"Expected 1 row, got {len(df)}"
